@@ -8,8 +8,7 @@ cursor.execute("""
 CREATE TABLE IF NOT EXISTS sub1 (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     srn TEXT NOT NULL,
-    name TEXT NOT NULL,
-    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP    
+    attendance REAL DEFAULT 0.0   
 )
 """)
 
@@ -18,8 +17,7 @@ cursor.execute("""
 CREATE TABLE IF NOT EXISTS sub2 (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     srn TEXT NOT NULL,
-    name TEXT NOT NULL,
-    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP    
+    attendance REAL DEFAULT 0.0
 )
 """)
 
