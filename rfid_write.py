@@ -2,6 +2,7 @@ import RPi.GPIO as gpio
 from mfrc522 import SimpleMFRC522
 import json
 import time
+import buzzer
 
 reader = SimpleMFRC522()
 
@@ -21,5 +22,5 @@ data_serialised = json.dumps(data)
 print("Data to be written to card:", data_serialised)
 print("Place card near the reader to write student data")
 reader.write(data_serialised)
-
+buzzer.beep_success()
 print("Data written succefully!")
