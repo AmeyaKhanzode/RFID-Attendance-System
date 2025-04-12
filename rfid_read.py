@@ -5,9 +5,13 @@ from mfrc522 import SimpleMFRC522
 reader = SimpleMFRC522()
 
 try:
-    print("Place card near the reader:")
+    print("place card near the reader:")
     id, data = reader.read()
-    text = json.loads(data)
-    print(f"ID: {id} | Text: {text}")
+    data = data.strip()
+    student_info = json.loads(data)
+    print("student info:", student_info)
+except json.JSONDecodeError:
+    print("error: couldnt not decode json data from the card.")
+    print("recieved raw data:", data)
 finally:
     gpio.cleanup()
