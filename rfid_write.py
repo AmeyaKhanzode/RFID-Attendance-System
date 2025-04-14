@@ -1,25 +1,27 @@
 import RPi.GPIO as gpio
 from mfrc522 import SimpleMFRC522
 import json
-import time
+import buzzer
 
 reader = SimpleMFRC522()
 
 def create_student_details():
-    srn = input("Enter SRN: ")
-    subject = input("Subject: ")
-
+    srn = input("Enter SRN: ").strip()
+    subject = input("Subject (MPCA or CN): ").strip().lower()
     return {
-        "srn":srn,
-        "subject":subject
+        "srn": srn,
+        "subject": subject
     }
-
 
 data = create_student_details()
 
 data_serialised = json.dumps(data)
 print("Data to be written to card:", data_serialised)
 print("Place card near the reader to write student data")
-reader.write(data_serialised)
 
-print("Data written succefully!")
+try:
+    reader.write(data_serialised)
+    buzzer.beep_success()
+    print("Data written successfully!")
+finally:
+    gpio.cleanup()

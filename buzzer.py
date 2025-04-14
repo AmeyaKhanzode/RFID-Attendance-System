@@ -8,16 +8,19 @@ GPIO.setup(BUZZER_PIN, GPIO.OUT)
 GPIO.output(BUZZER_PIN, GPIO.HIGH)
 
 def beep_success():
-    GPIO.output(BUZZER_PIN, GPIO.LOW)
-    time.sleep(0.1)
-    GPIO.output(BUZZER_PIN, GPIO.HIGH)
+    for _ in range(3):
+        GPIO.output(BUZZER_PIN, GPIO.LOW)
+        time.sleep(0.07)
+        GPIO.output(BUZZER_PIN, GPIO.HIGH)
+        time.sleep(0.07)
 
 def beep_error():
     GPIO.output(BUZZER_PIN, GPIO.LOW)
-    time.sleep(0.6)
+    time.sleep(1)
     GPIO.output(BUZZER_PIN, GPIO.HIGH)
 
 def cleanup_buzzer():
+    GPIO.output(BUZZER_PIN, GPIO.HIGH)
     GPIO.cleanup()
 
 if __name__ == "__main__":

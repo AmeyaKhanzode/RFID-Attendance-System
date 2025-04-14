@@ -3,11 +3,11 @@ import json
 from mfrc522 import SimpleMFRC522
 from RPLCD.i2c import CharLCD
 import time
+import buzzer
 
 reader = SimpleMFRC522()
-lcd = CharLCD('PCF8574', 0x27)  # Adjust address if needed
+lcd = CharLCD('PCF8574', 0x27)
 
-# To keep track of already marked students (optional)
 attendance_log = set()
 
 try:
@@ -15,26 +15,25 @@ try:
         lcd.clear()
         lcd.write_string("Tap your card...")
 
-        # Wait for card and read data
         id, data = reader.read()
 
         try:
-            student = json.loads(data)
-            srn = student.get("SRN", "Not Found")
-            status = student.get("attendance", "Unknown")
+            student = json.loads(data.strip())
+            srn = student.get("srn", "Unknown")
+            subject = student.get("subject", "Unknown")
 
-            # Prevent duplicates
             if id in attendance_log:
                 status = "Already Marked"
             else:
                 attendance_log.add(id)
+                status = "Marked Present"
 
-            # Display SRN
+            buzzer.beep_success()
+
             lcd.clear()
             lcd.write_string(f"SRN:\n{srn[:16]}")
             time.sleep(2)
 
-            # Display Status
             lcd.clear()
             lcd.write_string(f"Status:\n{status[:16]}")
             time.sleep(2)
@@ -42,9 +41,9 @@ try:
         except json.JSONDecodeError:
             lcd.clear()
             lcd.write_string("Invalid card data")
+            buzzer.beep_error()
             time.sleep(2)
 
-        # Wait for card to be removed
         lcd.clear()
         lcd.write_string("Remove card...")
         time.sleep(1)
@@ -58,7 +57,6 @@ try:
                 pass
             time.sleep(0.5)
 
-        # Buffer delay after removal
         time.sleep(0.5)
 
 finally:
