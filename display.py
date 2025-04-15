@@ -45,8 +45,11 @@ def mark_attendance(srn, subject, current_date):
 
 try:
     while True:
+        # Show idle message before scanning
         lcd.clear()
-        lcd.write_string("Tap your card...")
+        lcd.write_string("Place card on")
+        lcd.crlf()
+        lcd.write_string("reader...")
 
         id, data = reader.read()
 
