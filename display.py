@@ -1,50 +1,99 @@
 import RPi.GPIO as gpio
 import json
+import sqlite3
 from mfrc522 import SimpleMFRC522
 from RPLCD.i2c import CharLCD
 import time
 
 reader = SimpleMFRC522()
-lcd = CharLCD('PCF8574', 0x27)  # Adjust address if needed
+lcd = CharLCD('PCF8574', 0x27)
+DB_NAME = "attendance.db"
 
-# To keep track of already marked students (optional)
 attendance_log = set()
+
+# Fetch attendance data for a given subject
+
+
+def get_attendance_info(srn, subject):
+    conn = sqlite3.connect(DB_NAME)
+    cur = conn.cursor()
+
+    cur.execute(f"""
+        SELECT attended, max_classes FROM {subject}
+        WHERE srn = ?
+    """, (srn,))
+    result = cur.fetchone()
+    conn.close()
+
+    if result:
+        attended, max_classes = result
+        min_required = int(0.75 * max_classes)
+        remaining_needed = max(0, min_required - attended)
+        return attended, max_classes, remaining_needed
+    else:
+        return None, None, None
+
 
 try:
     while True:
         lcd.clear()
         lcd.write_string("Tap your card...")
 
-        # Wait for card and read data
         id, data = reader.read()
 
         try:
             student = json.loads(data)
-            srn = student.get("SRN", "Not Found")
-            status = student.get("attendance", "Unknown")
+            print(student)
+            srn = student["srn"]
 
-            # Prevent duplicates
             if id in attendance_log:
-                status = "Already Marked"
+                lcd.clear()
+                lcd.write_string("Already marked")
+                time.sleep(2)
+                continue
             else:
                 attendance_log.add(id)
 
-            # Display SRN
-            lcd.clear()
-            lcd.write_string(f"SRN:\n{srn[:16]}")
-            time.sleep(2)
+            # List of subjects to check
+            subjects = ["mpca", "cn"]
+            found = False
 
-            # Display Status
-            lcd.clear()
-            lcd.write_string(f"Status:\n{status[:16]}")
-            time.sleep(2)
+            for subject in subjects:
+                attended, max_classes, remaining_needed = get_attendance_info(
+                    srn, subject)
+
+                if attended is not None:
+                    found = True
+
+                    # Subject name
+                    lcd.clear()
+                    lcd.write_string(f"{subject.upper()}")
+                    time.sleep(2)
+
+                    # Attendance count
+                    lcd.clear()
+                    lcd.write_string(f"{attended}/{max_classes}")
+                    time.sleep(2)
+
+                    # Required classes for 75%
+                    lcd.clear()
+                    if remaining_needed == 0:
+                        lcd.write_string("Need: none")
+                    else:
+                        lcd.write_string(f"Need: {remaining_needed}")
+                    time.sleep(2)
+
+            if not found:
+                lcd.clear()
+                lcd.write_string("SRN not found")
+                time.sleep(2)
 
         except json.JSONDecodeError:
             lcd.clear()
-            lcd.write_string("Invalid card data")
+            lcd.write_string("Invalid card")
             time.sleep(2)
 
-        # Wait for card to be removed
+        # Wait until card is removed
         lcd.clear()
         lcd.write_string("Remove card...")
         time.sleep(1)
@@ -58,7 +107,6 @@ try:
                 pass
             time.sleep(0.5)
 
-        # Buffer delay after removal
         time.sleep(0.5)
 
 finally:
