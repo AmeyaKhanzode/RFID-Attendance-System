@@ -14,6 +14,7 @@ def init():
         srn TEXT,
         attended INTEGER DEFAULT 0,
         max_classes INTEGER DEFAULT 20
+        timestamp DATE
     )
     """)
 
@@ -24,6 +25,7 @@ def init():
         srn TEXT,
         attended INTEGER DEFAULT 0,
         max_classes INTEGER DEFAULT 25
+        timestamp DATE
     )
     """)
 
@@ -49,3 +51,15 @@ def insert_attendance(student_info):
 
     conn.commit()
     conn.close()
+
+
+def get_details(srn, subject):
+    conn = sqlite3.connect(DB_NAME)
+    cur = conn.cursor()
+
+    query = f"SELECT * FROM {subject} WHERE SRN = ?"
+    cur.execute(query, (srn,))
+
+    result = cur.fetchall()
+    conn.close()
+    return result

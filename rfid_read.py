@@ -52,6 +52,10 @@ def read():
         student_info = json.loads(data)
         srn = student_info["srn"]
         subject = student_info["subject"]
+        entry = db_utils.get_details(srn, subject)
+        if entry[0][3] == time.strftime("%Y-%M-%d"):
+            lcd.clear()
+            lcd.string("Already marked!")
         buzzer.beep_success()
         lcd.clear()
         lcd.write_string(f"{srn[8:]}\n")
