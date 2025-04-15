@@ -11,14 +11,13 @@ DB_NAME = "attendance.db"
 
 attendance_log = set()
 
+# Fetch attendance data for a given subject
 def get_attendance_info(srn, subject):
     conn = sqlite3.connect(DB_NAME)
     cur = conn.cursor()
 
-    table = subject.lower()
-
     cur.execute(f"""
-        SELECT attended, max_classes FROM {table}
+        SELECT attended, max_classes FROM {subject}
         WHERE srn = ?
     """, (srn,))
     result = cur.fetchone()
@@ -42,13 +41,6 @@ try:
         try:
             student = json.loads(data)
             srn = student.get("SRN", "Not Found")
-            subject = student.get("subject", "Unknown")
-
-            if subject == "Unknown":
-                lcd.clear()
-                lcd.write_string("No subject info")
-                time.sleep(2)
-                continue
 
             if id in attendance_log:
                 lcd.clear()
@@ -58,34 +50,45 @@ try:
             else:
                 attendance_log.add(id)
 
-            attended, max_classes, remaining_needed = get_attendance_info(srn, subject)
+            # List of subjects to check
+            subjects = ["mpca", "cn"]
+            found = False
 
-            if attended is None:
+            for subject in subjects:
+                attended, max_classes, remaining_needed = get_attendance_info(srn, subject)
+
+                if attended is not None:
+                    found = True
+
+                    # Subject name
+                    lcd.clear()
+                    lcd.write_string(f"{subject.upper()}")
+                    time.sleep(2)
+
+                    # Attendance count
+                    lcd.clear()
+                    lcd.write_string(f"{attended}/{max_classes}")
+                    time.sleep(2)
+
+                    # Required classes for 75%
+                    lcd.clear()
+                    if remaining_needed == 0:
+                        lcd.write_string("Need: none")
+                    else:
+                        lcd.write_string(f"Need: {remaining_needed}")
+                    time.sleep(2)
+
+            if not found:
                 lcd.clear()
-                lcd.write_string("No record found")
+                lcd.write_string("SRN not found")
                 time.sleep(2)
-                continue
-
-            lcd.clear()
-            lcd.write_string(f"{srn[:16]}\n{subject.upper()[:16]}")
-            time.sleep(2)
-
-            lcd.clear()
-            lcd.write_string(f"Att: {attended}/{max_classes}")
-            time.sleep(2)
-
-            lcd.clear()
-            if remaining_needed == 0:
-                lcd.write_string("Need: none")
-            else:
-                lcd.write_string(f"Need: {remaining_needed}")
-            time.sleep(2)
 
         except json.JSONDecodeError:
             lcd.clear()
-            lcd.write_string("Invalid card data")
+            lcd.write_string("Invalid card")
             time.sleep(2)
 
+        # Wait until card is removed
         lcd.clear()
         lcd.write_string("Remove card...")
         time.sleep(1)
