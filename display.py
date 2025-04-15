@@ -4,12 +4,11 @@ import sqlite3
 from mfrc522 import SimpleMFRC522
 from RPLCD.i2c import CharLCD
 import time
+from datetime import datetime
 
 reader = SimpleMFRC522()
 lcd = CharLCD('PCF8574', 0x27)
 DB_NAME = "attendance.db"
-
-attendance_log = set()
 
 # Fetch attendance data for a given subject
 def get_attendance_info(srn, subject):
@@ -17,19 +16,32 @@ def get_attendance_info(srn, subject):
     cur = conn.cursor()
 
     cur.execute(f"""
-        SELECT attended, max_classes FROM {subject}
+        SELECT attended, max_classes, last_marked_date FROM {subject}
         WHERE srn = ?
     """, (srn,))
     result = cur.fetchone()
     conn.close()
 
     if result:
-        attended, max_classes = result
+        attended, max_classes, last_marked_date = result
         min_required = int(0.75 * max_classes)
         remaining_needed = max(0, min_required - attended)
-        return attended, max_classes, remaining_needed
+        return attended, max_classes, remaining_needed, last_marked_date
     else:
-        return None, None, None
+        return None, None, None, None
+
+# Update attendance if not already marked today
+def mark_attendance(srn, subject, current_date):
+    conn = sqlite3.connect(DB_NAME)
+    cur = conn.cursor()
+
+    cur.execute(f"""
+        UPDATE {subject}
+        SET attended = attended + 1, last_marked_date = ?
+        WHERE srn = ?
+    """, (current_date, srn))
+    conn.commit()
+    conn.close()
 
 try:
     while True:
@@ -43,27 +55,33 @@ try:
             print(student)
             srn = student["srn"]
 
-            if id in attendance_log:
-                lcd.clear()
-                lcd.write_string("Already marked")
-                lcd.crlf()
-                lcd.write_string("Remove card...")
-                time.sleep(2)
-                continue
-            else:
-                attendance_log.add(id)
-
             # List of subjects to check
             subjects = ["mpca", "cn"]
             found = False
+            current_date = datetime.now().strftime("%Y-%m-%d")
 
             for subject in subjects:
-                attended, max_classes, remaining_needed = get_attendance_info(srn, subject)
+                attended, max_classes, remaining_needed, last_marked_date = get_attendance_info(srn, subject)
 
                 if attended is not None:
                     found = True
 
-                    # Display: "MPCA: 3/5" and "NEEDED: 1"
+                    if last_marked_date == current_date:
+                        lcd.clear()
+                        lcd.write_string("Already marked")
+                        lcd.crlf()
+                        lcd.write_string(subject.upper())
+                        time.sleep(2)
+                        continue
+
+                    # Mark attendance
+                    mark_attendance(srn, subject, current_date)
+
+                    # Update values after marking
+                    attended += 1
+                    remaining_needed = max(0, int(0.75 * max_classes) - attended)
+
+                    # Display updated info
                     lcd.clear()
                     lcd.write_string(f"{subject.upper()}: {attended}/{max_classes}")
                     lcd.crlf()
