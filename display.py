@@ -40,11 +40,14 @@ try:
 
         try:
             student = json.loads(data)
-            srn = student.get("SRN", "Not Found")
+            print(student)
+            srn = student["srn"]
 
             if id in attendance_log:
                 lcd.clear()
                 lcd.write_string("Already marked")
+                lcd.crlf()
+                lcd.write_string("Remove card...")
                 time.sleep(2)
                 continue
             else:
@@ -60,32 +63,25 @@ try:
                 if attended is not None:
                     found = True
 
-                    # Subject name
+                    # Display: "MPCA: 3/5" and "NEEDED: 1"
                     lcd.clear()
-                    lcd.write_string(f"{subject.upper()}")
-                    time.sleep(2)
-
-                    # Attendance count
-                    lcd.clear()
-                    lcd.write_string(f"{attended}/{max_classes}")
-                    time.sleep(2)
-
-                    # Required classes for 75%
-                    lcd.clear()
-                    if remaining_needed == 0:
-                        lcd.write_string("Need: none")
-                    else:
-                        lcd.write_string(f"Need: {remaining_needed}")
-                    time.sleep(2)
+                    lcd.write_string(f"{subject.upper()}: {attended}/{max_classes}")
+                    lcd.crlf()
+                    lcd.write_string(f"NEEDED: {remaining_needed}")
+                    time.sleep(3)
 
             if not found:
                 lcd.clear()
                 lcd.write_string("SRN not found")
+                lcd.crlf()
+                lcd.write_string("Remove card...")
                 time.sleep(2)
 
         except json.JSONDecodeError:
             lcd.clear()
             lcd.write_string("Invalid card")
+            lcd.crlf()
+            lcd.write_string("Remove card...")
             time.sleep(2)
 
         # Wait until card is removed

@@ -41,7 +41,7 @@ def insert_attendance(student_info):
             VALUES (?)
         """, (student_info["srn"],))
 
-    elif student_info["subject"] == "cn":
+    elif student_info["subject"] == "CN":
         cur.execute("""
             INSERT INTO cn (srn)
             VALUES (?)
