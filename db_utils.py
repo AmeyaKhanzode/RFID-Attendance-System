@@ -1,30 +1,30 @@
 import sqlite3
 
-DB_NAME = "attendance.db"
+db_name = "attendance.db"
 
 
 def init():
-    conn = sqlite3.connect(DB_NAME)
+    conn = sqlite3.connect(db_name)
     cursor = conn.cursor()
 
-    # Table for subject 1
+    # table for subject 1
     cursor.execute("""
-    CREATE TABLE IF NOT EXISTS mpca (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        srn TEXT,
-        attended INTEGER DEFAULT 0,
-        max_classes INTEGER DEFAULT 20
+    create table if not exists mpca (
+        id integer primary key autoincrement,
+        srn text,
+        attended integer default 0,
+        max_classes integer default 20,
         timestamp DATE
     )
     """)
 
-    # Table for subject 2
+    # table for subject 2
     cursor.execute("""
-    CREATE TABLE IF NOT EXISTS cn (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        srn TEXT,
-        attended INTEGER DEFAULT 0,
-        max_classes INTEGER DEFAULT 25
+    create table if not exists cn (
+        id integer primary key autoincrement,
+        srn text,
+        attended integer default 0,
+        max_classes integer default 25,
         timestamp DATE
     )
     """)
@@ -34,19 +34,19 @@ def init():
 
 
 def insert_attendance(student_info):
-    conn = sqlite3.connect(DB_NAME)
+    conn = sqlite3.connect(db_name)
     cur = conn.cursor()
 
-    if student_info["subject"] == "MPCA":
+    if student_info["subject"] == "mpca":
         cur.execute("""
-            INSERT INTO mpca (srn)
-            VALUES (?)
+            insert into mpca (srn)
+            values (?)
         """, (student_info["srn"],))
 
-    elif student_info["subject"] == "CN":
+    elif student_info["subject"] == "cn":
         cur.execute("""
-            INSERT INTO cn (srn)
-            VALUES (?)
+            insert into cn (srn)
+            values (?)
         """, (student_info["srn"],))
 
     conn.commit()
@@ -54,10 +54,10 @@ def insert_attendance(student_info):
 
 
 def get_details(srn, subject):
-    conn = sqlite3.connect(DB_NAME)
+    conn = sqlite3.connect(db_name)
     cur = conn.cursor()
 
-    query = f"SELECT * FROM {subject} WHERE SRN = ?"
+    query = f"select * from {subject} where srn = ?"
     cur.execute(query, (srn,))
 
     result = cur.fetchall()

@@ -17,22 +17,23 @@ db_utils.init()
 def increment_attended(srn, subject):
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
-
+    today = time.strftime("%Y-%m-%d")
     subject = subject.lower()
 
+    # Check if already marked today
     cursor.execute(
-        f"SELECT * FROM {subject} WHERE srn = ? ORDER BY id DESC LIMIT 1", (srn,))
-    last_entry = cursor.fetchone()
-    if last_entry:
-        row_id, _, attended, _ = last_entry
-        new_attended = int(attended) + 1
-        cursor.execute(
-            f"UPDATE {subject} SET attended = ? WHERE id = ?", (new_attended, row_id))
-        print(f"Attendance incremented to {new_attended} for {srn}")
+        f"SELECT * FROM {subject} WHERE srn = ? AND timestamp = ?", (srn, today))
+    already_marked = cursor.fetchone()
+
+    if already_marked:
+        print(f"Attendance already marked today for {srn}")
     else:
+        # Insert a new attendance record for today
         cursor.execute(
-            f"INSERT INTO {subject} (srn, attended) VALUES (?, ?)", (srn, 1))
-        print(f"Inserted new attendance record for {srn} with attended = 1")
+            f"INSERT INTO {subject} (srn, attended, timestamp) VALUES (?, ?, ?)",
+            (srn, 1, today)
+        )
+        print(f"Inserted new attendance record for {srn} on {today}")
 
     conn.commit()
     conn.close()
@@ -47,25 +48,33 @@ def read():
     try:
         write_to_lcd("Place card...")
         id, data = reader.read()
-        swiped = 1
         data = data.strip()
         student_info = json.loads(data)
         srn = student_info["srn"]
         subject = student_info["subject"]
+        today = time.strftime("%Y-%m-%d")
+
         entry = db_utils.get_details(srn, subject)
-        if entry[0][3] == time.strftime("%Y-%M-%d"):
-            lcd.clear()
-            lcd.string("Already marked!")
+        print(entry)
+
+        # Check if today's attendance already exists
+        for record in entry:
+            if record[4] == today:
+                lcd.clear()
+                lcd.write_string("Already marked!")
+                print(f"{srn} already marked for {subject} today.")
+                buzzer.beep_error()
+                return  # Exit without updating
+
         buzzer.beep_success()
         lcd.clear()
-        lcd.write_string(f"{srn[8:]}\n")
-        lcd.write_string(f"{subject.upper()}")
+        lcd.write_string(f"{srn[8:]}\n{subject.upper()}")
         time.sleep(2)
         lcd.clear()
         lcd.write_string("Updated by 1")
-        print("Student info:", student_info)
 
         increment_attended(srn, subject)
+        print("Student info:", student_info)
 
     except json.JSONDecodeError:
         print("Error: Could not decode JSON data from the card.")
