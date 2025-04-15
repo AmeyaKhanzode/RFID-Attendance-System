@@ -20,7 +20,6 @@ def increment_attended(srn, subject):
     today = time.strftime("%Y-%m-%d")
     subject = subject.lower()
 
-    # Check if already marked today
     cursor.execute(
         f"SELECT * FROM {subject} WHERE srn = ? AND timestamp = ?", (srn, today))
     already_marked = cursor.fetchone()
@@ -28,7 +27,6 @@ def increment_attended(srn, subject):
     if already_marked:
         print(f"Attendance already marked today for {srn}")
     else:
-        # Insert a new attendance record for today
         cursor.execute(
             f"INSERT INTO {subject} (srn, attended, timestamp) VALUES (?, ?, ?)",
             (srn, 1, today)
@@ -46,32 +44,38 @@ def write_to_lcd(text):
 
 def read():
     try:
-        write_to_lcd("Place card...")
+        lcd.write_string("Place card...")
         id, data = reader.read()
+        lcd.clear()
         data = data.strip()
         student_info = json.loads(data)
         srn = student_info["srn"]
         subject = student_info["subject"]
         today = time.strftime("%Y-%m-%d")
+        print(time.tzname)
+        print(today)
 
         entry = db_utils.get_details(srn, subject)
         print(entry)
 
-        # Check if today's attendance already exists
-        for record in entry:
-            if record[4] == today:
+        if entry and len(entry[0]) > 4:
+            if entry[0][4] == today:
                 lcd.clear()
                 lcd.write_string("Already marked!")
-                print(f"{srn} already marked for {subject} today.")
                 buzzer.beep_error()
-                return  # Exit without updating
-
-        buzzer.beep_success()
-        lcd.clear()
-        lcd.write_string(f"{srn[8:]}\n{subject.upper()}")
-        time.sleep(2)
-        lcd.clear()
-        lcd.write_string("Updated by 1")
+                time.sleep(2)
+                lcd.clear()
+                print(f"{srn} already marked for {subject} today.")
+                return
+        else:
+            buzzer.beep_success()
+            lcd.write_string(f"{srn[8:]}\n{subject.upper()}")
+            print("testing")
+            time.sleep(2)
+            lcd.clear()
+            lcd.write_string("Updated by 1")
+            time.sleep(2)
+            lcd.clear()
 
         increment_attended(srn, subject)
         print("Student info:", student_info)

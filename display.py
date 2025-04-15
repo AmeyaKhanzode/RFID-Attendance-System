@@ -32,18 +32,18 @@ def get_attendance_info(srn, subject):
         return None, None, None
 
 
-def mark_attendance(srn, subject, current_date):
-    conn = sqlite3.connect(DB_NAME)
-    cur = conn.cursor()
-
-    cur.execute(f"""
-        UPDATE {subject}
-        SET attended = attended + 1, last_marked_date = ?
-        WHERE srn = ?
-    """, (current_date, srn))
-    conn.commit()
-    conn.close()
-
+# def mark_attendance(srn, subject, current_date):
+#     conn = sqlite3.connect(DB_NAME)
+#     cur = conn.cursor()
+#
+#     cur.execute(f"""
+#         UPDATE {subject}
+#         SET attended = attended + 1, last_marked_date = ?
+#         WHERE srn = ?
+#     """, (current_date, srn))
+#     conn.commit()
+#     conn.close()
+#
 
 def check_attendance():
     try:
