@@ -52,11 +52,8 @@ def read():
         srn = student_info["srn"]
         subject = student_info["subject"]
         today = time.strftime("%Y-%m-%d")
-        print(time.tzname)
-        print(today)
 
         entry = db_utils.get_details(srn, subject)
-        print(entry)
 
         if entry and len(entry[0]) > 4:
             if entry[0][4] == today:
@@ -70,7 +67,6 @@ def read():
         else:
             buzzer.beep_success()
             lcd.write_string(f"{srn[8:]}\n{subject.upper()}")
-            print("testing")
             time.sleep(2)
             lcd.clear()
             lcd.write_string("Updated by 1")

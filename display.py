@@ -55,7 +55,7 @@ def check_attendance():
 
             try:
                 student = json.loads(data)
-                buzzer.beep_success()
+                # buzzer.beep_success()
                 srn = student["srn"]
 
                 subjects = ["mpca", "cn"]
@@ -67,7 +67,7 @@ def check_attendance():
 
                     if attended is not None:
                         found = True
-
+                        buzzer.beep_success()
                         lcd.clear()
                         lcd.write_string(f"{srn[8:]}\n")
                         lcd.write_string(f"{subject.upper()}")
@@ -87,6 +87,7 @@ def check_attendance():
                 if not found:
                     lcd.clear()
                     lcd.write_string("SRN not found")
+                    buzzer.beep_error()
                     time.sleep(2)
 
             except json.JSONDecodeError:
